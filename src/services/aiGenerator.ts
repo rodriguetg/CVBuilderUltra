@@ -18,7 +18,7 @@ const callApi = async (prompt: string, apiConfig: APIConfig) => {
         model: model || defaultModel,
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.7,
-        max_tokens: 1000,
+        max_tokens: 2000,
       },
       {
         headers: {
@@ -79,4 +79,101 @@ ${jobContext}
 `;
 
   return callApi(prompt, apiConfig);
+};
+
+export const parseCvTextToProfile = async (
+  cvText: string,
+  apiConfig: APIConfig
+): Promise<Partial<UserProfile>> => {
+  const prompt = `
+    Analyse le texte brut de ce CV et extrais les informations pour les structurer en JSON.
+    Le JSON DOIT suivre EXACTEMENT la structure de l'interface TypeScript UserProfile ci-dessous.
+    Ne renvoie QUE le JSON, sans aucune autre explication, introduction, ou balise de code.
+    Si une information n'est pas trouvée, laisse le champ vide ("") ou le tableau vide ([]).
+    Pour les dates, utilise le format AAAA-MM.
+
+    \`\`\`typescript
+    interface UserProfile {
+      name: string;
+      email: string;
+      phone?: string;
+      address?: string;
+      summary: string;
+      experience: {
+        title: string;
+        company: string;
+        location?: string;
+        startDate: string; // Format AAAA-MM
+        endDate?: string; // Format AAAA-MM, ou vide si poste actuel
+        current: boolean;
+        description: string;
+      }[];
+      education: {
+        degree: string;
+        institution: string;
+        location?: string;
+        startDate: string; // Format AAAA-MM
+        endDate?: string; // Format AAAA-MM
+      }[];
+      skills: {
+        name: string;
+        category: string; // ex: 'Frontend', 'Backend', 'Langages', 'Outils'
+      }[];
+      languages: {
+        name:string;
+        level: string; // ex: 'Natif', 'Courant', 'Intermédiaire'
+      }[];
+    }
+    \`\`\`
+
+    Voici le texte du CV à analyser :
+    ---
+    ${cvText}
+    ---
+
+    JSON de sortie :
+  `;
+
+  const jsonString = await callApi(prompt, apiConfig);
+
+  try {
+    // The API might return the JSON inside a markdown block, so we need to clean it.
+    const cleanedJsonString = jsonString.replace(/```json/g, '').replace(/```/g, '').trim();
+    const parsedData = JSON.parse(cleanedJsonString);
+    
+    // We need to add IDs and other missing fields to match the full UserProfile type
+    const profile: Partial<UserProfile> = {
+      ...parsedData,
+      id: `user-${Date.now()}`,
+      experience: parsedData.experience?.map((exp: any, index: number) => ({
+        ...exp,
+        id: `exp-${index}`,
+        achievements: [],
+      })) || [],
+      education: parsedData.education?.map((edu: any, index: number) => ({
+        ...edu,
+        id: `edu-${index}`,
+      })) || [],
+      skills: parsedData.skills?.map((skill: any, index: number) => ({
+        ...skill,
+        id: `skill-${index}`,
+        level: 'intermediate', // Default level
+      })) || [],
+      languages: parsedData.languages?.map((lang: any, index: number) => ({
+        ...lang,
+        id: `lang-${index}`,
+      })) || [],
+      certifications: [],
+      projects: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    return profile;
+
+  } catch (error) {
+    console.error("Failed to parse AI response:", error);
+    console.error("AI Response was:", jsonString);
+    throw new Error("L'IA n'a pas pu analyser le CV. Le format du document est peut-être trop complexe.");
+  }
 };

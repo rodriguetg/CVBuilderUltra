@@ -1,30 +1,18 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
-import { Linkedin, ExternalLink, ChevronLeft, AlertCircle, Info } from 'lucide-react';
+import { Linkedin, Upload, ChevronLeft, ArrowRight } from 'lucide-react';
 
 interface LinkedInImportProps {
   onBack: () => void;
 }
 
 const LinkedInImport: React.FC<LinkedInImportProps> = ({ onBack }) => {
-  const [profileUrl, setProfileUrl] = useState('');
-  const [isConnecting, setIsConnecting] = useState(false);
-
-  const handleConnect = () => {
-    setIsConnecting(true);
-    // Simulate connection process
-    setTimeout(() => {
-      setIsConnecting(false);
-      alert('Fonctionnalité en développement - Connexion LinkedIn bientôt disponible !');
-    }, 2000);
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Import LinkedIn</h2>
-          <p className="text-gray-600">Connectez votre profil LinkedIn pour un import automatique</p>
+          <h2 className="text-2xl font-bold text-gray-900">Import depuis LinkedIn</h2>
+          <p className="text-gray-600">Suivez ce guide pour importer votre profil via un export PDF.</p>
         </div>
         <button
           onClick={onBack}
@@ -41,85 +29,65 @@ const LinkedInImport: React.FC<LinkedInImportProps> = ({ onBack }) => {
             <Linkedin className="w-8 h-8 text-white" />
           </div>
           <h3 className="text-xl font-semibold text-gray-900 mb-2">
-            Importez depuis LinkedIn
+            Importer votre profil LinkedIn en 2 étapes
           </h3>
-          <p className="text-gray-600">
-            Connectez-vous à LinkedIn pour importer automatiquement toutes vos informations professionnelles
+          <p className="text-gray-600 max-w-2xl mx-auto">
+            La connexion directe à LinkedIn n'est pas possible pour des raisons de sécurité.
+            La méthode la plus simple et la plus sûre est d'exporter votre profil en PDF et de l'importer.
           </p>
         </div>
 
-        {/* Method 1: Direct Connection */}
-        <div className="space-y-6">
-          <div className="border border-gray-200 rounded-lg p-6">
-            <h4 className="font-medium text-gray-900 mb-4">Méthode 1: Connexion directe</h4>
-            <button
-              onClick={handleConnect}
-              disabled={isConnecting}
-              className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200 disabled:opacity-50 flex items-center justify-center space-x-2"
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+          {/* Step 1 */}
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="space-y-4"
+          >
+            <div className="flex items-center space-x-3">
+              <span className="w-8 h-8 flex items-center justify-center bg-blue-100 text-blue-700 font-bold rounded-full">1</span>
+              <h4 className="font-semibold text-lg text-gray-800">Exporter votre PDF depuis LinkedIn</h4>
+            </div>
+            <ul className="list-decimal list-inside space-y-2 text-gray-600 pl-4">
+              <li>Allez sur votre profil LinkedIn.</li>
+              <li>Cliquez sur le bouton <strong>"Plus"</strong> sous votre nom.</li>
+              <li>Sélectionnez <strong>"Enregistrer au format PDF"</strong>.</li>
+              <li>Le fichier PDF sera téléchargé sur votre ordinateur.</li>
+            </ul>
+             <a 
+                href="https://www.linkedin.com/in/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="inline-flex items-center space-x-2 text-blue-600 hover:underline"
             >
-              <Linkedin className="w-5 h-5" />
-              <span>{isConnecting ? 'Connexion...' : 'Se connecter avec LinkedIn'}</span>
-              <ExternalLink className="w-4 h-4" />
-            </button>
-          </div>
+                <span>Aller sur mon profil LinkedIn</span>
+                <ArrowRight className="w-4 h-4" />
+            </a>
+          </motion.div>
 
-          {/* Method 2: URL Import */}
-          <div className="border border-gray-200 rounded-lg p-6">
-            <h4 className="font-medium text-gray-900 mb-4">Méthode 2: Import par URL</h4>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  URL de votre profil LinkedIn
-                </label>
-                <input
-                  type="url"
-                  value={profileUrl}
-                  onChange={(e) => setProfileUrl(e.target.value)}
-                  placeholder="https://www.linkedin.com/in/votre-profil"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              <button
-                onClick={() => alert('Fonctionnalité en développement')}
-                disabled={!profileUrl}
-                className="w-full bg-gray-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-gray-700 transition-colors duration-200 disabled:opacity-50"
-              >
-                Importer depuis l'URL
-              </button>
+          {/* Step 2 */}
+          <motion.div 
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="space-y-4"
+          >
+            <div className="flex items-center space-x-3">
+              <span className="w-8 h-8 flex items-center justify-center bg-blue-100 text-blue-700 font-bold rounded-full">2</span>
+              <h4 className="font-semibold text-lg text-gray-800">Importer le PDF ici</h4>
             </div>
-          </div>
-        </div>
-
-        {/* Info Section */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="mt-8 bg-amber-50 border border-amber-200 rounded-lg p-4"
-        >
-          <div className="flex items-start space-x-3">
-            <Info className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-            <div className="text-sm text-amber-800">
-              <h4 className="font-medium mb-1">Fonctionnalité en développement</h4>
-              <p>
-                L'import LinkedIn direct est actuellement en développement. 
-                En attendant, vous pouvez utiliser l'upload de fichier ou la saisie manuelle.
-              </p>
+            <p className="text-gray-600 pl-4">
+              Une fois le PDF téléchargé, revenez en arrière et choisissez l'option <strong>"Upload de fichier"</strong> pour que notre IA analyse votre profil.
+            </p>
+            <div className="pl-4">
+                <button
+                onClick={onBack}
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 flex items-center space-x-2"
+                >
+                    <Upload className="w-5 h-5" />
+                    <span>Retourner à l'import</span>
+                </button>
             </div>
-          </div>
-        </motion.div>
-      </div>
-
-      {/* Benefits */}
-      <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-        <h3 className="font-semibold text-blue-900 mb-4">📊 Données importées automatiquement :</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-800">
-          <div>✓ Informations personnelles</div>
-          <div>✓ Expériences professionnelles</div>
-          <div>✓ Formation et diplômes</div>
-          <div>✓ Compétences et recommandations</div>
-          <div>✓ Projets et réalisations</div>
-          <div>✓ Langues et certifications</div>
+          </motion.div>
         </div>
       </div>
     </div>
