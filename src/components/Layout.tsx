@@ -1,0 +1,96 @@
+import React, { ReactNode } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { 
+  FileText, 
+  Home, 
+  Upload, 
+  LayoutDashboard, 
+  Edit3, 
+  Settings,
+  Sparkles
+} from 'lucide-react';
+
+interface LayoutProps {
+  children: ReactNode;
+}
+
+const Layout: React.FC<LayoutProps> = ({ children }) => {
+  const location = useLocation();
+
+  const navigation = [
+    { name: 'Accueil', href: '/', icon: Home },
+    { name: 'Import', href: '/import', icon: Upload },
+    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    { name: 'Éditeur', href: '/edit', icon: Edit3 },
+    { name: 'Paramètres', href: '/settings', icon: Settings },
+  ];
+
+  const isActive = (path: string) => {
+    if (path === '/') return location.pathname === '/';
+    if (path === '/edit') return location.pathname.startsWith('/edit');
+    return location.pathname.startsWith(path);
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+      {/* Header */}
+      <motion.header
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white shadow-sm border-b border-gray-200"
+      >
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <Link to="/" className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center">
+                <FileText className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">CV Builder Ultra</h1>
+                <p className="text-xs text-gray-600">Créateur de CV IA</p>
+              </div>
+            </Link>
+            
+            <div className="flex items-center space-x-2 text-sm text-gray-600">
+              <Sparkles className="w-4 h-4 text-yellow-500" />
+              <span>Propulsé par l'IA</span>
+            </div>
+          </div>
+        </div>
+      </motion.header>
+
+      {/* Navigation */}
+      <nav className="bg-white border-b border-gray-200">
+        <div className="container mx-auto px-4">
+          <div className="flex space-x-8">
+            {navigation.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={`flex items-center space-x-2 py-4 text-sm font-medium border-b-2 transition-colors duration-200 ${
+                    isActive(item.href)
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span>{item.name}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      </nav>
+
+      {/* Main Content */}
+      <main className="container mx-auto px-4 py-8">
+        {children}
+      </main>
+    </div>
+  );
+};
+
+export default Layout;
