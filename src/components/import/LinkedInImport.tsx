@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Linkedin, Upload, ChevronLeft, ArrowRight } from 'lucide-react';
+import { Linkedin, Upload, ChevronLeft, ArrowRight, AlertTriangle } from 'lucide-react';
 
 interface LinkedInImportProps {
   onBack: () => void;
@@ -24,6 +24,19 @@ const LinkedInImport: React.FC<LinkedInImportProps> = ({ onBack }) => {
       </div>
 
       <div className="bg-white rounded-xl shadow-lg p-8">
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-8 rounded-r-lg">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <AlertTriangle className="h-5 w-5 text-yellow-500" aria-hidden="true" />
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-yellow-800">
+                Ceci est un <strong>guide manuel</strong>. CV Builder Ultra ne se connecte pas directement à votre compte LinkedIn pour des raisons de confidentialité et de sécurité.
+              </p>
+            </div>
+          </div>
+        </div>
+
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-blue-600 rounded-xl flex items-center justify-center mx-auto mb-4">
             <Linkedin className="w-8 h-8 text-white" />
@@ -32,7 +45,6 @@ const LinkedInImport: React.FC<LinkedInImportProps> = ({ onBack }) => {
             Importer votre profil LinkedIn en 2 étapes
           </h3>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            La connexion directe à LinkedIn n'est pas possible pour des raisons de sécurité.
             La méthode la plus simple et la plus sûre est d'exporter votre profil en PDF et de l'importer.
           </p>
         </div>

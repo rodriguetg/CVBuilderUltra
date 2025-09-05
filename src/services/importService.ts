@@ -1,8 +1,9 @@
 import * as pdfjsLib from 'pdfjs-dist';
 import mammoth from 'mammoth';
+import pdfjsWorker from 'pdfjs-dist/build/pdf.worker?url';
 
 // The worker is needed for pdf.js to work in the browser
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 export const parseCVFile = async (file: File): Promise<string> => {
   const fileType = file.type;

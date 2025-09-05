@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Upload, FileText, Link as LinkIcon, Edit, Linkedin, Globe, ChevronRight } from 'lucide-react';
+import { Upload, FileText, Edit, Linkedin, Globe, ChevronRight } from 'lucide-react';
 import FileUpload from '../components/import/FileUpload';
 import LinkedInImport from '../components/import/LinkedInImport';
 import ManualForm from '../components/import/ManualForm';
@@ -17,31 +17,35 @@ const ImportPage: React.FC = () => {
       description: 'Importez votre CV existant (PDF, DOC, DOCX)',
       icon: Upload,
       color: 'blue',
-      recommended: true
+      recommended: true,
+      disabled: false
     },
     {
       id: 'linkedin' as ImportMethod,
-      title: 'Import LinkedIn',
-      description: 'Connectez votre profil LinkedIn automatiquement',
+      title: 'Guide d\'import LinkedIn',
+      description: 'Suivez les étapes pour exporter votre profil en PDF et l\'importer.',
       icon: Linkedin,
       color: 'indigo',
-      recommended: false
+      recommended: false,
+      disabled: false
     },
     {
       id: 'url' as ImportMethod,
-      title: 'Import Indeed/URL',
-      description: 'Importez depuis Indeed ou une URL de profil',
+      title: 'Import Indeed/URL (Bientôt disponible)',
+      description: 'Importez depuis Indeed ou une URL de profil.',
       icon: Globe,
       color: 'purple',
-      recommended: false
+      recommended: false,
+      disabled: true
     },
     {
       id: 'manual' as ImportMethod,
       title: 'Saisie manuelle',
-      description: 'Créez votre profil from scratch',
+      description: 'Créez votre profil à partir de zéro.',
       icon: Edit,
       color: 'green',
-      recommended: false
+      recommended: false,
+      disabled: false
     }
   ];
 
@@ -101,10 +105,11 @@ const ImportPage: React.FC = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
-              onClick={() => setSelectedMethod(method.id)}
-              className="relative bg-white rounded-xl shadow-lg p-8 text-left hover:shadow-xl transition-all duration-200 border border-gray-200 hover:border-gray-300 group"
+              onClick={() => !method.disabled && setSelectedMethod(method.id)}
+              disabled={method.disabled}
+              className={`relative bg-white rounded-xl shadow-lg p-8 text-left transition-all duration-200 border border-gray-200 ${method.disabled ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-xl hover:border-gray-300 group'}`}
             >
-              {method.recommended && (
+              {method.recommended && !method.disabled && (
                 <div className="absolute -top-3 left-6 bg-yellow-400 text-yellow-900 text-xs font-bold px-3 py-1 rounded-full">
                   Recommandé
                 </div>

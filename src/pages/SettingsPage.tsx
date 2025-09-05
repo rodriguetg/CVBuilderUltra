@@ -25,7 +25,7 @@ const SettingsPage: React.FC = () => {
   };
 
   const handleProviderChange = (provider: 'openai' | 'deepseek') => {
-    setApiConfig(prev => ({ ...prev, provider, apiKey: '' }));
+    setApiConfig(prev => ({ ...prev, provider, apiKey: prev?.provider === provider ? prev.apiKey : '' }));
   };
 
   return (
@@ -107,7 +107,7 @@ const SettingsPage: React.FC = () => {
                     type={showApiKey ? 'text' : 'password'}
                     value={apiConfig.apiKey}
                     onChange={(e) => setApiConfig(prev => ({ ...prev, apiKey: e.target.value }))}
-                    placeholder="sk-..."
+                    placeholder="Collez votre clé API ici"
                     className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                   <button
@@ -119,7 +119,7 @@ const SettingsPage: React.FC = () => {
                   </button>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  Votre clé API est stockée localement dans votre navigateur.
+                  Votre clé API est stockée localement dans votre navigateur et n'est jamais envoyée à nos serveurs.
                 </p>
               </div>
 
@@ -144,6 +144,25 @@ const SettingsPage: React.FC = () => {
                     </>
                   )}
                 </select>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h4 className="font-medium text-blue-900 mb-2">Comment obtenir votre clé API ?</h4>
+                <div className="text-sm text-blue-800 space-y-1">
+                  {apiConfig.provider === 'openai' ? (
+                    <>
+                      <p>1. Rendez-vous sur <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="underline font-medium">platform.openai.com/api-keys</a></p>
+                      <p>2. Connectez-vous et cliquez sur "Create new secret key".</p>
+                      <p>3. Copiez la clé et collez-la ci-dessus.</p>
+                    </>
+                  ) : (
+                    <>
+                      <p>1. Rendez-vous sur <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noopener noreferrer" className="underline font-medium">platform.deepseek.com/api_keys</a></p>
+                      <p>2. Connectez-vous et cliquez sur "Create new API key".</p>
+                      <p>3. Copiez la clé et collez-la ci-dessus.</p>
+                    </>
+                  )}
+                </div>
               </div>
 
               <button 

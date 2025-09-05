@@ -40,6 +40,11 @@ const FileUpload: React.FC<FileUploadProps> = ({ onBack }) => {
 
       const partialProfile = await parseCvTextToProfile(cvText, state.settings.apiConfig);
 
+      // Validate that the parsing was successful and returned meaningful data
+      if (!partialProfile || (!partialProfile.name && !partialProfile.summary && !partialProfile.experience?.length)) {
+        throw new Error("L'analyse du CV a échoué. Les CV créés avec des outils de design comme Canva sont souvent difficiles à lire. Veuillez essayer la saisie manuelle ou un CV au format texte simple.");
+      }
+
       // Combine with existing data or create new, ensuring all fields are present
       const newProfile: UserProfile = {
         id: `user-${Date.now()}`,
@@ -149,15 +154,17 @@ const FileUpload: React.FC<FileUploadProps> = ({ onBack }) => {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center space-x-2"
+            className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start space-x-3"
           >
-            <AlertCircle className="w-5 h-5 text-red-500" />
-            <span className="text-red-800 text-sm">{error}</span>
-            {error.includes('clé API') && (
-              <Link to="/settings" className="text-sm text-blue-700 underline ml-auto">
-                Configurer l'API
-              </Link>
-            )}
+            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+            <div>
+              <span className="text-red-800 text-sm font-medium">{error}</span>
+              {error.includes('clé API') && (
+                <Link to="/settings" className="text-sm text-blue-700 underline ml-2">
+                  Configurer l'API
+                </Link>
+              )}
+            </div>
           </motion.div>
         )}
       </div>
