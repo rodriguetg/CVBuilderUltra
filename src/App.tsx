@@ -9,6 +9,7 @@ import EditPage from './pages/EditPage';
 import SettingsPage from './pages/SettingsPage';
 import LetterGeneratorPage from './pages/LetterGeneratorPage';
 import ProfilesPage from './pages/ProfilesPage';
+import JobSearchPage from './pages/JobSearchPage';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
             <Route path="/edit" element={<EditPage />} />
             <Route path="/letter-generator" element={<LetterGeneratorPage />} />
             <Route path="/profiles" element={<ProfilesPage />} />
+            <Route path="/job-search" element={<JobSearchPage />} />
             <Route path="/settings" element={<SettingsPage />} />
           </Routes>
         </Layout>

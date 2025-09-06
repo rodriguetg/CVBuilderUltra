@@ -139,8 +139,9 @@ export interface JobOffer {
   location?: string;
   salary?: string;
   type?: string;
-  source: 'upload' | 'url' | 'manual';
+  source: 'upload' | 'url' | 'manual' | 'api';
   createdAt: Date;
+  link?: string;
 }
 
 export interface MatchingResult {
