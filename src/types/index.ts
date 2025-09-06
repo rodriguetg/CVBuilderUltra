@@ -16,7 +16,7 @@ export interface UserProfile {
 }
 
 export interface Experience {
-  id: string;
+  id:string;
   title: string;
   company: string;
   location?: string;
@@ -169,4 +169,16 @@ export interface AppSettings {
   apiConfig?: APIConfig;
   autoSave: boolean;
   defaultTemplate: string;
+}
+
+export interface AtsRecommendation {
+  id: string;
+  severity: 'high' | 'medium' | 'low' | 'good';
+  title: string;
+  description: string;
+}
+
+export interface AtsCheckResult {
+  score: number;
+  recommendations: AtsRecommendation[];
 }

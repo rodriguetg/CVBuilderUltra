@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { APIConfig, UserProfile, JobOffer } from '../types';
+import { APIConfig, UserProfile, JobOffer, CVSectionType } from '../types';
 
 const getApiUrl = (provider: 'openai' | 'deepseek') => {
   if (provider === 'openai') return 'https://api.openai.com/v1/chat/completions';
@@ -38,7 +38,7 @@ const callApi = async (prompt: string, apiConfig: APIConfig) => {
 };
 
 export const generateRewriteSuggestion = async (
-  section: string,
+  section: CVSectionType,
   currentText: string,
   profile: UserProfile,
   jobOffer: JobOffer | null,
@@ -49,7 +49,7 @@ export const generateRewriteSuggestion = async (
 **OFFRE D'EMPLOI CIBLÉE :**
 - Titre: ${jobOffer.title}
 - Entreprise: ${jobOffer.company}
-- Mots-clés: ${jobOffer.keywords.join(', ')}
+- Mots-clés: ${jobOffer.keywords?.join(', ')}
 `
     : '';
 
@@ -87,10 +87,10 @@ export const parseCvTextToProfile = async (
 ): Promise<Partial<UserProfile>> => {
   const prompt = `
     Analyse le texte brut de ce CV et extrais les informations pour les structurer en JSON.
+    Ta réponse DOIT être un unique objet JSON valide. N'inclus AUCUN texte, explication, ou commentaire avant ou après l'objet JSON. N'utilise PAS de blocs de code markdown comme \`\`\`json. Ta sortie doit commencer par { et se terminer par }.
     Le JSON DOIT suivre EXACTEMENT la structure de l'interface TypeScript UserProfile ci-dessous.
-    Ne renvoie QUE le JSON, sans aucune autre explication, introduction, ou balise de code.
     Si une information n'est pas trouvée, laisse le champ vide ("") ou le tableau vide ([]).
-    Pour les dates, utilise le format AAAA-MM.
+    Pour les dates, utilise le format AAAA-MM si possible, sinon laisse le texte tel quel.
 
     \`\`\`typescript
     interface UserProfile {

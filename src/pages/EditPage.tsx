@@ -5,7 +5,7 @@ import { useCVContext } from '../context/CVContext';
 import { DndContext, closestCenter, DragEndEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 
-import { FileText, Target, Download, Save, Bot } from 'lucide-react';
+import { FileText, Target, Download, Save, Bot, ShieldCheck } from 'lucide-react';
 
 import CVPreview from '../components/edit/CVPreview';
 import JobMatchModal from '../components/edit/JobMatchModal';
@@ -13,6 +13,7 @@ import AISuggestionModal from '../components/edit/AISuggestionModal';
 import AppearanceEditor from '../components/edit/AppearanceEditor';
 import { exportToPDF, exportToDocx } from '../services/exportService';
 import { CVSectionType } from '../types';
+import AtsCheckModal from '../components/edit/AtsCheckModal';
 
 type SuggestionModalState = {
   isOpen: boolean;
@@ -28,6 +29,7 @@ const EditPage: React.FC = () => {
   const { currentCV, cvs } = state;
   
   const [isMatchModalOpen, setMatchModalOpen] = useState(false);
+  const [isAtsModalOpen, setAtsModalOpen] = useState(false);
   const [suggestionModalState, setSuggestionModalState] = useState<SuggestionModalState>({
     isOpen: false,
     sectionType: null,
@@ -117,6 +119,7 @@ const EditPage: React.FC = () => {
   return (
     <div className="space-y-8">
       <JobMatchModal isOpen={isMatchModalOpen} onClose={() => setMatchModalOpen(false)} />
+      <AtsCheckModal isOpen={isAtsModalOpen} onClose={() => setAtsModalOpen(false)} />
       <AISuggestionModal 
         isOpen={suggestionModalState.isOpen}
         onClose={() => setSuggestionModalState({ ...suggestionModalState, isOpen: false })}
@@ -161,13 +164,22 @@ const EditPage: React.FC = () => {
           <AppearanceEditor />
           <div className="bg-white rounded-xl shadow-lg p-6">
             <h3 className="font-semibold text-gray-900 mb-4 flex items-center space-x-2"><Target className="w-5 h-5 text-orange-500" /><span>Optimisation IA</span></h3>
-            <button 
-              onClick={() => setMatchModalOpen(true)}
-              className="w-full text-left p-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-all flex items-center space-x-2 border"
-            >
-              <Bot className="w-4 h-4" />
-              <span>Analyser une offre</span>
-            </button>
+            <div className="space-y-2">
+              <button 
+                onClick={() => setMatchModalOpen(true)}
+                className="w-full text-left p-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-all flex items-center space-x-2 border"
+              >
+                <Bot className="w-4 h-4" />
+                <span>Analyser une offre</span>
+              </button>
+              <button 
+                onClick={() => setAtsModalOpen(true)}
+                className="w-full text-left p-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-all flex items-center space-x-2 border"
+              >
+                <ShieldCheck className="w-4 h-4 text-green-600" />
+                <span>Vérificateur ATS</span>
+              </button>
+            </div>
           </div>
         </aside>
 

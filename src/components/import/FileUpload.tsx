@@ -6,7 +6,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useCVContext } from '../../context/CVContext';
 import { parseCVFile } from '../../services/importService';
 import { parseCvTextToProfile } from '../../services/aiGenerator';
-import { UserProfile } from '../../types';
+import { UserProfile, CV, CVSection } from '../../types';
 
 interface FileUploadProps {
   onBack: () => void;
@@ -40,12 +40,10 @@ const FileUpload: React.FC<FileUploadProps> = ({ onBack }) => {
 
       const partialProfile = await parseCvTextToProfile(cvText, state.settings.apiConfig);
 
-      // Validate that the parsing was successful and returned meaningful data
       if (!partialProfile || (!partialProfile.name && !partialProfile.summary && !partialProfile.experience?.length)) {
         throw new Error("L'analyse du CV a échoué. Les CV créés avec des outils de design comme Canva sont souvent difficiles à lire. Veuillez essayer la saisie manuelle ou un CV au format texte simple.");
       }
 
-      // Combine with existing data or create new, ensuring all fields are present
       const newProfile: UserProfile = {
         id: `user-${Date.now()}`,
         name: '',
@@ -62,7 +60,34 @@ const FileUpload: React.FC<FileUploadProps> = ({ onBack }) => {
         ...partialProfile,
       };
 
+      const defaultSections: CVSection[] = [
+        { id: 'summary', title: 'Résumé' },
+        { id: 'experience', title: 'Expérience Professionnelle' },
+        { id: 'education', title: 'Formation' },
+        { id: 'skills', title: 'Compétences' },
+        { id: 'languages', title: 'Langues' }
+      ];
+
+      const newCV: CV = {
+        id: `cv-${Date.now()}`,
+        profileId: newProfile.id,
+        name: `CV de ${newProfile.name || 'Profil importé'}`,
+        templateId: state.settings.defaultTemplate || 'modern',
+        content: newProfile,
+        layout: {
+          colors: { primary: '#2563EB', secondary: '#4F46E5', text: '#111827', background: '#FFFFFF' },
+          fonts: { heading: 'Georgia, serif', body: 'Arial, sans-serif' }
+        },
+        sections: defaultSections,
+        score: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        exports: [],
+        views: 0
+      };
+
       dispatch({ type: 'SET_PROFILE', payload: newProfile });
+      dispatch({ type: 'ADD_CV', payload: newCV });
       
       setStatus('success');
       setTimeout(() => {
@@ -74,7 +99,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onBack }) => {
       setError(errorMessage);
       setStatus('error');
     }
-  }, [navigate, dispatch, state.settings.apiConfig]);
+  }, [navigate, dispatch, state.settings.apiConfig, state.settings.defaultTemplate]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,

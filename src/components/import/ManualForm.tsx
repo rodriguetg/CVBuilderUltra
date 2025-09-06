@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, User, Briefcase, GraduationCap, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useCVContext } from '../../context/CVContext';
-import { UserProfile } from '../../types';
+import { UserProfile, CV, CVSection } from '../../types';
 
 interface ManualFormProps {
   onBack: () => void;
@@ -11,7 +11,7 @@ interface ManualFormProps {
 
 const ManualForm: React.FC<ManualFormProps> = ({ onBack }) => {
   const navigate = useNavigate();
-  const { dispatch } = useCVContext();
+  const { state, dispatch } = useCVContext();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     // Personal Info
@@ -30,7 +30,7 @@ const ManualForm: React.FC<ManualFormProps> = ({ onBack }) => {
       endDate: '',
       current: false,
       description: '',
-      achievements: ['']
+      achievements: ''
     }],
     
     // Education
@@ -45,7 +45,7 @@ const ManualForm: React.FC<ManualFormProps> = ({ onBack }) => {
     }],
     
     // Skills
-    skills: [''],
+    skills: '',
     languages: [{ name: '', level: '' }],
     certifications: [{
       name: '',
@@ -62,11 +62,6 @@ const ManualForm: React.FC<ManualFormProps> = ({ onBack }) => {
         const arrayField = prev[field as keyof typeof prev] as any[];
         const newArray = [...arrayField];
         newArray[index] = { ...newArray[index], [subField]: value };
-        return { ...prev, [field]: newArray };
-      } else if (index !== undefined) {
-        const arrayField = prev[field as keyof typeof prev] as any[];
-        const newArray = [...arrayField];
-        newArray[index] = value;
         return { ...prev, [field]: newArray };
       } else {
         return { ...prev, [field]: value };
@@ -89,9 +84,8 @@ const ManualForm: React.FC<ManualFormProps> = ({ onBack }) => {
   };
 
   const handleSubmit = () => {
-    // Create UserProfile object
     const profile: UserProfile = {
-      id: Date.now().toString(),
+      id: `user-${Date.now()}`,
       name: formData.name,
       email: formData.email,
       phone: formData.phone,
@@ -106,7 +100,7 @@ const ManualForm: React.FC<ManualFormProps> = ({ onBack }) => {
         endDate: exp.endDate,
         current: exp.current,
         description: exp.description,
-        achievements: exp.achievements.filter(a => a.trim()),
+        achievements: exp.achievements.split('\n').filter(a => a.trim()),
         technologies: []
       })),
       education: formData.education.map((edu, index) => ({
@@ -119,7 +113,7 @@ const ManualForm: React.FC<ManualFormProps> = ({ onBack }) => {
         gpa: edu.gpa,
         description: edu.description
       })),
-      skills: formData.skills.filter(s => s.trim()).map((skill, index) => ({
+      skills: formData.skills.split(',').map(s => s.trim()).filter(s => s).map((skill, index) => ({
         id: `skill-${index}`,
         name: skill,
         level: 'intermediate' as const,
@@ -143,13 +137,40 @@ const ManualForm: React.FC<ManualFormProps> = ({ onBack }) => {
       updatedAt: new Date()
     };
 
+    const defaultSections: CVSection[] = [
+      { id: 'summary', title: 'Résumé' },
+      { id: 'experience', title: 'Expérience Professionnelle' },
+      { id: 'education', title: 'Formation' },
+      { id: 'skills', title: 'Compétences' },
+      { id: 'languages', title: 'Langues' }
+    ];
+
+    const newCV: CV = {
+      id: `cv-${Date.now()}`,
+      profileId: profile.id,
+      name: `CV de ${profile.name || 'Profil Manuel'}`,
+      templateId: state.settings.defaultTemplate || 'modern',
+      content: profile,
+      layout: {
+        colors: { primary: '#2563EB', secondary: '#4F46E5', text: '#111827', background: '#FFFFFF' },
+        fonts: { heading: 'Georgia, serif', body: 'Arial, sans-serif' }
+      },
+      sections: defaultSections,
+      score: 0,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      exports: [],
+      views: 0
+    };
+
     dispatch({ type: 'SET_PROFILE', payload: profile });
+    dispatch({ type: 'ADD_CV', payload: newCV });
     navigate('/dashboard?import=manual');
   };
 
   const steps = [
-    { id: 1, title: 'Informations personnelles', icon: User },
-    { id: 2, title: 'Expérience professionnelle', icon: Briefcase },
+    { id: 1, title: 'Infos personnelles', icon: User },
+    { id: 2, title: 'Expérience', icon: Briefcase },
     { id: 3, title: 'Formation', icon: GraduationCap },
     { id: 4, title: 'Compétences', icon: Star }
   ];
@@ -226,13 +247,13 @@ const ManualForm: React.FC<ManualFormProps> = ({ onBack }) => {
         return (
           <div className="space-y-6">
             {formData.experiences.map((exp, index) => (
-              <div key={index} className="border border-gray-200 rounded-lg p-6">
-                <div className="flex justify-between items-center mb-4">
+              <div key={index} className="border border-gray-200 rounded-lg p-6 space-y-4">
+                <div className="flex justify-between items-center">
                   <h4 className="font-medium text-gray-900">Expérience {index + 1}</h4>
                   {formData.experiences.length > 1 && (
                     <button
                       onClick={() => removeArrayItem('experiences', index)}
-                      className="text-red-500 hover:text-red-700 text-sm"
+                      className="text-red-500 hover:text-red-700 text-sm font-medium"
                     >
                       Supprimer
                     </button>
@@ -242,17 +263,19 @@ const ManualForm: React.FC<ManualFormProps> = ({ onBack }) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <input
                     type="text"
-                    placeholder="Titre du poste"
+                    placeholder="Titre du poste *"
                     value={exp.title}
                     onChange={(e) => handleInputChange('experiences', e.target.value, index, 'title')}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    required
                   />
                   <input
                     type="text"
-                    placeholder="Entreprise"
+                    placeholder="Entreprise *"
                     value={exp.company}
                     onChange={(e) => handleInputChange('experiences', e.target.value, index, 'company')}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    required
                   />
                   <input
                     type="text"
@@ -261,17 +284,18 @@ const ManualForm: React.FC<ManualFormProps> = ({ onBack }) => {
                     onChange={(e) => handleInputChange('experiences', e.target.value, index, 'location')}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
-                  <div className="flex space-x-2">
+                  <div className="flex items-center space-x-2">
                     <input
                       type="month"
-                      placeholder="Date de début"
+                      aria-label="Date de début"
                       value={exp.startDate}
                       onChange={(e) => handleInputChange('experiences', e.target.value, index, 'startDate')}
                       className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     />
+                    <span className="text-gray-500">-</span>
                     <input
                       type="month"
-                      placeholder="Date de fin"
+                      aria-label="Date de fin"
                       value={exp.endDate}
                       onChange={(e) => handleInputChange('experiences', e.target.value, index, 'endDate')}
                       className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
@@ -280,24 +304,29 @@ const ManualForm: React.FC<ManualFormProps> = ({ onBack }) => {
                   </div>
                 </div>
                 
-                <div className="mt-4">
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={exp.current}
-                      onChange={(e) => handleInputChange('experiences', e.target.checked, index, 'current')}
-                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span className="text-sm text-gray-700">Poste actuel</span>
-                  </label>
-                </div>
+                <label className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    checked={exp.current}
+                    onChange={(e) => handleInputChange('experiences', e.target.checked, index, 'current')}
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-gray-700">Poste actuel</span>
+                </label>
                 
                 <textarea
                   placeholder="Description du poste et responsabilités"
                   value={exp.description}
                   onChange={(e) => handleInputChange('experiences', e.target.value, index, 'description')}
                   rows={3}
-                  className="w-full mt-4 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+                <textarea
+                  placeholder="Réalisations (une par ligne)"
+                  value={exp.achievements}
+                  onChange={(e) => handleInputChange('experiences', e.target.value, index, 'achievements')}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             ))}
@@ -305,7 +334,7 @@ const ManualForm: React.FC<ManualFormProps> = ({ onBack }) => {
             <button
               onClick={() => addArrayItem('experiences', {
                 title: '', company: '', location: '', startDate: '', endDate: '', 
-                current: false, description: '', achievements: ['']
+                current: false, description: '', achievements: ''
               })}
               className="w-full py-3 px-4 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-400 hover:text-gray-700 transition-colors"
             >
@@ -318,13 +347,13 @@ const ManualForm: React.FC<ManualFormProps> = ({ onBack }) => {
         return (
           <div className="space-y-6">
             {formData.education.map((edu, index) => (
-              <div key={index} className="border border-gray-200 rounded-lg p-6">
-                <div className="flex justify-between items-center mb-4">
+              <div key={index} className="border border-gray-200 rounded-lg p-6 space-y-4">
+                <div className="flex justify-between items-center">
                   <h4 className="font-medium text-gray-900">Formation {index + 1}</h4>
                   {formData.education.length > 1 && (
                     <button
                       onClick={() => removeArrayItem('education', index)}
-                      className="text-red-500 hover:text-red-700 text-sm"
+                      className="text-red-500 hover:text-red-700 text-sm font-medium"
                     >
                       Supprimer
                     </button>
@@ -334,17 +363,19 @@ const ManualForm: React.FC<ManualFormProps> = ({ onBack }) => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <input
                     type="text"
-                    placeholder="Diplôme/Formation"
+                    placeholder="Diplôme/Formation *"
                     value={edu.degree}
                     onChange={(e) => handleInputChange('education', e.target.value, index, 'degree')}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    required
                   />
                   <input
                     type="text"
-                    placeholder="École/Université"
+                    placeholder="École/Université *"
                     value={edu.institution}
                     onChange={(e) => handleInputChange('education', e.target.value, index, 'institution')}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    required
                   />
                   <input
                     type="text"
@@ -353,17 +384,18 @@ const ManualForm: React.FC<ManualFormProps> = ({ onBack }) => {
                     onChange={(e) => handleInputChange('education', e.target.value, index, 'location')}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
-                  <div className="flex space-x-2">
+                  <div className="flex items-center space-x-2">
                     <input
                       type="month"
-                      placeholder="Date de début"
+                      aria-label="Date de début"
                       value={edu.startDate}
                       onChange={(e) => handleInputChange('education', e.target.value, index, 'startDate')}
                       className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     />
+                     <span className="text-gray-500">-</span>
                     <input
                       type="month"
-                      placeholder="Date de fin"
+                      aria-label="Date de fin"
                       value={edu.endDate}
                       onChange={(e) => handleInputChange('education', e.target.value, index, 'endDate')}
                       className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
@@ -389,33 +421,15 @@ const ManualForm: React.FC<ManualFormProps> = ({ onBack }) => {
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Compétences techniques
+                Compétences
               </label>
-              {formData.skills.map((skill, index) => (
-                <div key={index} className="flex items-center space-x-2 mb-2">
-                  <input
-                    type="text"
-                    placeholder="Compétence"
-                    value={skill}
-                    onChange={(e) => handleInputChange('skills', e.target.value, index)}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
-                  {formData.skills.length > 1 && (
-                    <button
-                      onClick={() => removeArrayItem('skills', index)}
-                      className="text-red-500 hover:text-red-700 text-sm px-2 py-1"
-                    >
-                      ×
-                    </button>
-                  )}
-                </div>
-              ))}
-              <button
-                onClick={() => addArrayItem('skills', '')}
-                className="text-blue-600 hover:text-blue-700 text-sm"
-              >
-                + Ajouter une compétence
-              </button>
+              <textarea
+                value={formData.skills}
+                onChange={(e) => handleInputChange('skills', e.target.value)}
+                rows={4}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Entrez vos compétences séparées par des virgules (ex: React, TypeScript, Node.js)"
+              />
             </div>
             
             <div>
@@ -434,7 +448,7 @@ const ManualForm: React.FC<ManualFormProps> = ({ onBack }) => {
                   <select
                     value={lang.level}
                     onChange={(e) => handleInputChange('languages', e.target.value, index, 'level')}
-                    className="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    className="w-40 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Niveau</option>
                     <option value="Débutant">Débutant</option>
@@ -454,7 +468,7 @@ const ManualForm: React.FC<ManualFormProps> = ({ onBack }) => {
               ))}
               <button
                 onClick={() => addArrayItem('languages', { name: '', level: '' })}
-                className="text-blue-600 hover:text-blue-700 text-sm"
+                className="text-blue-600 hover:text-blue-700 text-sm font-medium"
               >
                 + Ajouter une langue
               </button>
@@ -489,32 +503,29 @@ const ManualForm: React.FC<ManualFormProps> = ({ onBack }) => {
           {steps.map((step, index) => {
             const Icon = step.icon;
             return (
-              <div key={step.id} className="flex items-center">
-                <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                    currentStep >= step.id
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 text-gray-500'
-                  }`}
-                >
-                  <Icon className="w-5 h-5" />
+              <React.Fragment key={step.id}>
+                <div className="flex flex-col items-center text-center">
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors duration-300 ${
+                      currentStep >= step.id
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 text-gray-500'
+                    }`}
+                  >
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <p className={`mt-2 text-xs font-medium ${currentStep >= step.id ? 'text-blue-600' : 'text-gray-500'}`}>{step.title}</p>
                 </div>
                 {index < steps.length - 1 && (
                   <div
-                    className={`flex-1 h-1 mx-4 ${
+                    className={`flex-1 h-1 mx-4 transition-colors duration-300 ${
                       currentStep > step.id ? 'bg-blue-600' : 'bg-gray-200'
                     }`}
                   />
                 )}
-              </div>
+              </React.Fragment>
             );
           })}
-        </div>
-
-        <div className="text-center mb-6">
-          <h3 className="text-lg font-semibold text-gray-900">
-            {steps[currentStep - 1].title}
-          </h3>
         </div>
 
         <motion.div

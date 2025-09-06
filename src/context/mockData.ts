@@ -2,6 +2,7 @@ import { UserProfile, CV, CVTemplate, CVSection } from '../types';
 import ModernTemplate from '../components/templates/ModernTemplate';
 import ClassicTemplate from '../components/templates/ClassicTemplate';
 import CreativeTemplate from '../components/templates/CreativeTemplate';
+import AtsFriendlyTemplate from '../components/templates/AtsFriendlyTemplate';
 
 export const mockProfile: UserProfile = {
   id: 'user-1',
@@ -99,4 +100,5 @@ export const mockTemplates: CVTemplate[] = [
     { id: 'modern', name: 'Moderne', category: 'modern', preview: '', component: ModernTemplate },
     { id: 'classic', name: 'Classique', category: 'classic', preview: '', component: ClassicTemplate },
     { id: 'creative', name: 'Créatif', category: 'creative', preview: '', component: CreativeTemplate },
+    { id: 'ats-friendly', name: 'ATS Optimisé', category: 'modern', preview: '', component: AtsFriendlyTemplate },
 ];
