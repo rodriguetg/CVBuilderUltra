@@ -158,7 +158,7 @@ export interface MatchingSuggestion {
 }
 
 export interface APIConfig {
-  provider: 'openai' | 'deepseek';
+  provider: 'openai' | 'deepseek' | 'gemini' | 'openrouter';
   apiKey: string;
   model?: string;
 }
@@ -181,4 +181,20 @@ export interface AtsRecommendation {
 export interface AtsCheckResult {
   score: number;
   recommendations: AtsRecommendation[];
+}
+
+export interface GenerationOptions {
+  tone: 'professional' | 'enthusiastic' | 'confident' | 'creative';
+  length: 'short' | 'medium' | 'long';
+  language: 'fr' | 'en';
+}
+
+export interface CoverLetter {
+  id: string;
+  jobTitle: string;
+  company: string;
+  content: string;
+  createdAt: Date;
+  tone: GenerationOptions['tone'];
+  length: GenerationOptions['length'];
 }

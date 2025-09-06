@@ -4,6 +4,7 @@ import { Upload, FileText, Edit, Linkedin, Globe, ChevronRight } from 'lucide-re
 import FileUpload from '../components/import/FileUpload';
 import LinkedInImport from '../components/import/LinkedInImport';
 import ManualForm from '../components/import/ManualForm';
+import UrlImport from '../components/import/UrlImport';
 
 type ImportMethod = 'file' | 'linkedin' | 'url' | 'manual';
 
@@ -31,12 +32,12 @@ const ImportPage: React.FC = () => {
     },
     {
       id: 'url' as ImportMethod,
-      title: 'Import Indeed/URL (Bientôt disponible)',
-      description: 'Importez depuis Indeed ou une URL de profil.',
+      title: 'Import via URL LinkedIn (Expérimental)',
+      description: 'Collez l\'URL de votre profil pour une analyse.',
       icon: Globe,
       color: 'purple',
       recommended: false,
-      disabled: true
+      disabled: false
     },
     {
       id: 'manual' as ImportMethod,
@@ -55,6 +56,8 @@ const ImportPage: React.FC = () => {
         return <FileUpload onBack={() => setSelectedMethod(null)} />;
       case 'linkedin':
         return <LinkedInImport onBack={() => setSelectedMethod(null)} />;
+      case 'url':
+        return <UrlImport onBack={() => setSelectedMethod(null)} />;
       case 'manual':
         return <ManualForm onBack={() => setSelectedMethod(null)} />;
       default:

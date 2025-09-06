@@ -46,13 +46,13 @@ const FileUpload: React.FC<FileUploadProps> = ({ onBack }) => {
 
       const newProfile: UserProfile = {
         id: `user-${Date.now()}`,
-        name: '',
-        email: '',
-        summary: '',
-        experience: [],
-        education: [],
-        skills: [],
-        languages: [],
+        name: partialProfile.name || 'Nouveau Profil',
+        email: partialProfile.email || '',
+        summary: partialProfile.summary || '',
+        experience: partialProfile.experience || [],
+        education: partialProfile.education || [],
+        skills: partialProfile.skills || [],
+        languages: partialProfile.languages || [],
         certifications: [],
         projects: [],
         createdAt: new Date(),
@@ -86,7 +86,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ onBack }) => {
         views: 0
       };
 
-      dispatch({ type: 'SET_PROFILE', payload: newProfile });
+      dispatch({ type: 'ADD_PROFILE', payload: newProfile });
       dispatch({ type: 'ADD_CV', payload: newCV });
       
       setStatus('success');

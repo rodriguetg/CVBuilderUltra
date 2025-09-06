@@ -1,6 +1,6 @@
-import React, { ReactNode } from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FileText, 
   Home, 
@@ -8,21 +8,32 @@ import {
   LayoutDashboard, 
   Edit3, 
   Settings,
-  Sparkles
+  Sparkles,
+  FileSignature,
+  Users,
+  ChevronDown
 } from 'lucide-react';
+import { useCVContext } from '../context/CVContext';
 
 interface LayoutProps {
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
+  const { state, dispatch } = useCVContext();
+  const [isProfileMenuOpen, setProfileMenuOpen] = useState(false);
+
+  const { profiles, currentProfileId } = state;
+  const currentProfile = profiles.find(p => p.id === currentProfileId);
 
   const navigation = [
     { name: 'Accueil', href: '/', icon: Home },
     { name: 'Import', href: '/import', icon: Upload },
     { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Éditeur', href: '/edit', icon: Edit3 },
+    { name: 'Éditeur CV', href: '/edit', icon: Edit3 },
+    { name: 'Lettres', href: '/letter-generator', icon: FileSignature },
+    { name: 'Profils', href: '/profiles', icon: Users },
     { name: 'Paramètres', href: '/settings', icon: Settings },
   ];
 
@@ -30,6 +41,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
     if (path === '/') return location.pathname === '/';
     if (path === '/edit') return location.pathname.startsWith('/edit');
     return location.pathname.startsWith(path);
+  };
+
+  const handleProfileChange = (profileId: string) => {
+    dispatch({ type: 'SET_CURRENT_PROFILE_ID', payload: profileId });
+    setProfileMenuOpen(false);
   };
 
   return (
@@ -52,9 +68,47 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               </div>
             </Link>
             
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <Sparkles className="w-4 h-4 text-yellow-500" />
-              <span>Propulsé par l'IA</span>
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                <button 
+                  onClick={() => setProfileMenuOpen(!isProfileMenuOpen)}
+                  className="flex items-center space-x-2 text-sm text-gray-600 bg-gray-100 px-3 py-2 rounded-lg hover:bg-gray-200"
+                >
+                  <Users className="w-4 h-4" />
+                  <span>{currentProfile?.name || 'Profils'}</span>
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+                <AnimatePresence>
+                  {isProfileMenuOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg z-10 border"
+                    >
+                      <div className="py-1">
+                        {profiles.map(profile => (
+                          <button
+                            key={profile.id}
+                            onClick={() => handleProfileChange(profile.id)}
+                            className={`w-full text-left px-4 py-2 text-sm ${currentProfileId === profile.id ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-100'}`}
+                          >
+                            {profile.name}
+                          </button>
+                        ))}
+                         <div className="border-t my-1"></div>
+                         <Link to="/profiles" onClick={() => setProfileMenuOpen(false)} className="block w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-gray-100">
+                           Gérer les profils
+                         </Link>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+              <div className="flex items-center space-x-2 text-sm text-gray-600">
+                <Sparkles className="w-4 h-4 text-yellow-500" />
+                <span>Propulsé par l'IA</span>
+              </div>
             </div>
           </div>
         </div>

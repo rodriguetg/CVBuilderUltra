@@ -1,32 +1,92 @@
 import axios from 'axios';
 import { APIConfig, UserProfile, JobOffer, CVSectionType } from '../types';
 
-const getApiUrl = (provider: 'openai' | 'deepseek') => {
-  if (provider === 'openai') return 'https://api.openai.com/v1/chat/completions';
-  return 'https://api.deepseek.com/v1/chat/completions';
-};
-
 const callApi = async (prompt: string, apiConfig: APIConfig) => {
   const { provider, apiKey, model } = apiConfig;
-  const url = getApiUrl(provider);
-  const defaultModel = provider === 'openai' ? 'gpt-4-turbo' : 'deepseek-chat';
+
+  if (provider === 'gemini') {
+    const geminiModel = model || 'gemini-1.5-flash-latest';
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiKey}`;
+    try {
+      const response = await axios.post(url, {
+        contents: [{ parts: [{ text: prompt }] }],
+      }, {
+        headers: { 'Content-Type': 'application/json' },
+      });
+      if (response.data.candidates && response.data.candidates[0].content && response.data.candidates[0].content.parts[0]) {
+        return response.data.candidates[0].content.parts[0].text;
+      } else {
+        const blockReason = response.data.promptFeedback?.blockReason;
+        if (blockReason) {
+            throw new Error(`La requête a été bloquée par Gemini pour la raison suivante : ${blockReason}.`);
+        }
+        throw new Error('Réponse inattendue de l\'API Gemini.');
+      }
+    } catch (error) {
+      console.error(`Error calling Gemini API:`, error);
+      if (axios.isAxiosError(error) && error.response) {
+        const errorMessage = error.response.data?.error?.message || 'Erreur inconnue';
+        throw new Error(`Erreur de l'API Gemini : ${errorMessage}`);
+      }
+      throw new Error(`Une erreur est survenue lors de la communication avec l'API Gemini.`);
+    }
+  }
+
+  // Logic for OpenAI, DeepSeek, and OpenRouter
+  const getApiDetails = () => {
+    const commonBody = {
+      messages: [{ role: 'user', content: prompt }],
+    };
+    const commonHeaders = {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    };
+
+    switch (provider) {
+      case 'openai':
+        return {
+          url: 'https://api.openai.com/v1/chat/completions',
+          body: {
+            ...commonBody,
+            model: model || 'gpt-4-turbo',
+            temperature: 0.7,
+            max_tokens: 2000,
+          },
+          headers: commonHeaders,
+        };
+      case 'deepseek':
+        return {
+          url: 'https://api.deepseek.com/v1/chat/completions',
+          body: {
+            ...commonBody,
+            model: model || 'deepseek-chat',
+            temperature: 0.7,
+            max_tokens: 2000,
+          },
+          headers: commonHeaders,
+        };
+      case 'openrouter':
+        return {
+          url: 'https://openrouter.ai/api/v1/chat/completions',
+          body: {
+            ...commonBody,
+            model: model || 'google/gemma-7b-it:free',
+          },
+          headers: {
+            ...commonHeaders,
+            'HTTP-Referer': window.location.origin,
+            'X-Title': 'CV Builder Ultra',
+          },
+        };
+      default:
+        // This should not be reached if types are correct, but as a safeguard:
+        throw new Error(`Unsupported provider: ${provider}`);
+    }
+  };
 
   try {
-    const response = await axios.post(
-      url,
-      {
-        model: model || defaultModel,
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.7,
-        max_tokens: 2000,
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    const { url, body, headers } = getApiDetails();
+    const response = await axios.post(url, body, { headers });
     return response.data.choices[0].message.content;
   } catch (error) {
     console.error(`Error calling ${provider} API:`, error);

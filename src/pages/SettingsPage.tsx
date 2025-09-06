@@ -24,8 +24,22 @@ const SettingsPage: React.FC = () => {
     alert('Configuration API sauvegardée !');
   };
 
-  const handleProviderChange = (provider: 'openai' | 'deepseek') => {
+  const handleProviderChange = (provider: 'openai' | 'deepseek' | 'gemini' | 'openrouter') => {
     setApiConfig(prev => ({ ...prev, provider, apiKey: prev?.provider === provider ? prev.apiKey : '' }));
+  };
+
+  const models = {
+    openai: ['gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo'],
+    deepseek: ['deepseek-chat', 'deepseek-coder'],
+    gemini: ['gemini-1.5-flash-latest', 'gemini-1.5-pro-latest', 'gemini-pro'],
+    openrouter: [
+        'google/gemma-7b-it:free',
+        'mistralai/mistral-7b-instruct:free',
+        'nousresearch/nous-hermes-2-mixtral-8x7b-dpo:free',
+        'openai/gpt-4o',
+        'google/gemini-pro-1.5',
+        'anthropic/claude-3-haiku'
+    ]
   };
 
   return (
@@ -82,7 +96,7 @@ const SettingsPage: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Fournisseur d'IA
                 </label>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                   <button 
                     onClick={() => handleProviderChange('openai')}
                     className={`p-4 border rounded-lg text-left transition-all ${apiConfig.provider === 'openai' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-300 hover:border-gray-400'}`}>
@@ -93,14 +107,26 @@ const SettingsPage: React.FC = () => {
                     onClick={() => handleProviderChange('deepseek')}
                     className={`p-4 border rounded-lg text-left transition-all ${apiConfig.provider === 'deepseek' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-300 hover:border-gray-400'}`}>
                     <div className="font-medium">DeepSeek</div>
-                    <div className="text-sm">DeepSeek Chat, Coder</div>
+                    <div className="text-sm">DeepSeek Chat</div>
+                  </button>
+                   <button 
+                    onClick={() => handleProviderChange('gemini')}
+                    className={`p-4 border rounded-lg text-left transition-all ${apiConfig.provider === 'gemini' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-300 hover:border-gray-400'}`}>
+                    <div className="font-medium">Google Gemini</div>
+                    <div className="text-sm">Gemini 1.5 Pro</div>
+                  </button>
+                  <button 
+                    onClick={() => handleProviderChange('openrouter')}
+                    className={`p-4 border rounded-lg text-left transition-all ${apiConfig.provider === 'openrouter' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-300 hover:border-gray-400'}`}>
+                    <div className="font-medium">OpenRouter</div>
+                    <div className="text-sm">Accès +100 modèles</div>
                   </button>
                 </div>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Clé API {apiConfig.provider === 'openai' ? 'OpenAI' : 'DeepSeek'}
+                  Clé API {apiConfig.provider}
                 </label>
                 <div className="relative">
                   <input
@@ -131,18 +157,9 @@ const SettingsPage: React.FC = () => {
                   value={apiConfig.model}
                   onChange={(e) => setApiConfig(prev => ({ ...prev, model: e.target.value }))}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                  {apiConfig.provider === 'openai' ? (
-                    <>
-                      <option value="gpt-4-turbo">gpt-4-turbo (recommandé)</option>
-                      <option value="gpt-4">gpt-4</option>
-                      <option value="gpt-3.5-turbo">gpt-3.5-turbo</option>
-                    </>
-                  ) : (
-                    <>
-                      <option value="deepseek-chat">deepseek-chat (recommandé)</option>
-                      <option value="deepseek-coder">deepseek-coder</option>
-                    </>
-                  )}
+                  {apiConfig.provider && models[apiConfig.provider].map(m => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
                 </select>
               </div>
 
@@ -155,11 +172,23 @@ const SettingsPage: React.FC = () => {
                       <p>2. Connectez-vous et cliquez sur "Create new secret key".</p>
                       <p>3. Copiez la clé et collez-la ci-dessus.</p>
                     </>
-                  ) : (
+                  ) : apiConfig.provider === 'deepseek' ? (
                     <>
                       <p>1. Rendez-vous sur <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noopener noreferrer" className="underline font-medium">platform.deepseek.com/api_keys</a></p>
                       <p>2. Connectez-vous et cliquez sur "Create new API key".</p>
                       <p>3. Copiez la clé et collez-la ci-dessus.</p>
+                    </>
+                  ) : apiConfig.provider === 'gemini' ? (
+                    <>
+                      <p>1. Rendez-vous sur <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="underline font-medium">Google AI Studio</a></p>
+                      <p>2. Connectez-vous et cliquez sur "Create API key".</p>
+                      <p>3. Copiez la clé et collez-la ci-dessus.</p>
+                    </>
+                  ) : (
+                    <>
+                      <p>1. Rendez-vous sur <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="underline font-medium">openrouter.ai/keys</a></p>
+                      <p>2. Connectez-vous et cliquez sur "Create Key".</p>
+                      <p>3. Copiez votre clé (elle commence par `sk-or-`).</p>
                     </>
                   )}
                 </div>

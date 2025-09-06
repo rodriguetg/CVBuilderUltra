@@ -1,14 +1,15 @@
 import React, { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
-import { UserProfile, CV, JobOffer, CVTemplate, AppSettings, CVSection, Experience } from '../types';
-import { mockProfile, mockCVs, mockTemplates } from './mockData';
+import { UserProfile, CV, JobOffer, CVTemplate, AppSettings, CVSection, Experience, CoverLetter } from '../types';
+import { mockProfiles, mockCVs, mockTemplates } from './mockData';
 
-const LOCAL_STORAGE_KEY = 'cv-builder-data';
+const LOCAL_STORAGE_KEY = 'cv-builder-data-v2';
 
 interface CVState {
-  currentProfile: UserProfile | null;
+  profiles: UserProfile[];
+  currentProfileId: string | null;
   cvs: CV[];
-  currentCV: CV | null;
   jobOffers: JobOffer[];
+  letters: CoverLetter[];
   templates: CVTemplate[];
   settings: AppSettings;
   isLoading: boolean;
@@ -18,26 +19,30 @@ interface CVState {
 type CVAction =
   | { type: 'INITIALIZE_DATA' }
   | { type: 'LOAD_FROM_STORAGE'; payload: Partial<CVState> }
-  | { type: 'SET_PROFILE'; payload: UserProfile }
+  | { type: 'ADD_PROFILE'; payload: UserProfile }
+  | { type: 'DELETE_PROFILE'; payload: string }
+  | { type: 'SET_CURRENT_PROFILE_ID'; payload: string }
   | { type: 'ADD_CV'; payload: CV }
-  | { type: 'UPDATE_CV'; payload: Partial<CV> }
+  | { type: 'UPDATE_CV'; payload: { cvId: string; updates: Partial<CV> } }
   | { type: 'DELETE_CV'; payload: string }
-  | { type: 'SET_CURRENT_CV'; payload: CV | null }
   | { type: 'ADD_JOB_OFFER'; payload: JobOffer }
   | { type: 'DELETE_JOB_OFFER'; payload: string }
+  | { type: 'ADD_LETTER'; payload: CoverLetter }
+  | { type: 'DELETE_LETTER'; payload: string }
   | { type: 'SET_TEMPLATES'; payload: CVTemplate[] }
   | { type: 'UPDATE_SETTINGS'; payload: Partial<AppSettings> }
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null }
   | { type: 'REORDER_SECTIONS'; payload: { cvId: string; sections: CVSection[] } }
-  | { type: 'UPDATE_SUMMARY'; payload: string }
-  | { type: 'UPDATE_EXPERIENCE'; payload: { id: string; updates: Partial<Experience> } };
+  | { type: 'UPDATE_SUMMARY'; payload: { profileId: string; summary: string } }
+  | { type: 'UPDATE_EXPERIENCE'; payload: { profileId: string; experienceId: string; updates: Partial<Experience> } };
 
 const initialState: CVState = {
-  currentProfile: null,
+  profiles: [],
+  currentProfileId: null,
   cvs: [],
-  currentCV: null,
   jobOffers: [],
+  letters: [],
   templates: mockTemplates,
   settings: {
     language: 'fr',
@@ -57,17 +62,13 @@ const CVContext = createContext<{
 function cvReducer(state: CVState, action: CVAction): CVState {
   switch (action.type) {
     case 'INITIALIZE_DATA':
-      const cvsWithTemplates = mockCVs.map(cv => ({
-        ...cv,
-        templateId: cv.templateId || 'modern'
-      }));
       return {
         ...state,
         isLoading: false,
-        currentProfile: mockProfile,
+        profiles: mockProfiles,
+        currentProfileId: mockProfiles.length > 0 ? mockProfiles[0].id : null,
         templates: mockTemplates,
-        cvs: cvsWithTemplates,
-        currentCV: cvsWithTemplates.length > 0 ? cvsWithTemplates[0] : null,
+        cvs: mockCVs,
       };
 
     case 'LOAD_FROM_STORAGE':
@@ -75,106 +76,133 @@ function cvReducer(state: CVState, action: CVAction): CVState {
         ...state,
         ...action.payload,
         isLoading: false,
-        templates: mockTemplates, // Always load fresh templates
+        templates: mockTemplates,
       };
 
-    case 'SET_PROFILE':
-      return { ...state, currentProfile: action.payload };
-    
-    case 'ADD_CV':
-      if (state.cvs.some(cv => cv.id === action.payload.id)) {
-        return state;
-      }
-      return { 
-        ...state, 
-        cvs: [action.payload, ...state.cvs],
-        currentCV: action.payload 
-      };
-    
-    case 'UPDATE_CV':
-      const updatedCVs = state.cvs.map(cv => 
-        cv.id === state.currentCV?.id ? { ...cv, ...action.payload, updatedAt: new Date() } : cv
-      );
+    case 'ADD_PROFILE':
+      if (state.profiles.some(p => p.id === action.payload.id)) return state;
       return {
         ...state,
-        cvs: updatedCVs,
-        currentCV: state.currentCV ? { ...state.currentCV, ...action.payload, updatedAt: new Date() } : null
+        profiles: [...state.profiles, action.payload],
+        currentProfileId: action.payload.id,
       };
-    
+
+    case 'DELETE_PROFILE': {
+        const profileIdToDelete = action.payload;
+        const remainingProfiles = state.profiles.filter(p => p.id !== profileIdToDelete);
+        const remainingCVs = state.cvs.filter(cv => cv.profileId !== profileIdToDelete);
+        
+        let newCurrentProfileId = state.currentProfileId;
+        if (state.currentProfileId === profileIdToDelete) {
+            newCurrentProfileId = remainingProfiles.length > 0 ? remainingProfiles[0].id : null;
+        }
+
+        return {
+            ...state,
+            profiles: remainingProfiles,
+            cvs: remainingCVs,
+            currentProfileId: newCurrentProfileId
+        };
+    }
+
+    case 'SET_CURRENT_PROFILE_ID':
+      return { ...state, currentProfileId: action.payload };
+
+    case 'ADD_CV':
+      if (state.cvs.some(cv => cv.id === action.payload.id)) return state;
+      return { ...state, cvs: [action.payload, ...state.cvs] };
+
+    case 'UPDATE_CV':
+      return {
+        ...state,
+        cvs: state.cvs.map(cv =>
+          cv.id === action.payload.cvId
+            ? { ...cv, ...action.payload.updates, updatedAt: new Date() }
+            : cv
+        ),
+      };
+
     case 'DELETE_CV':
       return {
         ...state,
         cvs: state.cvs.filter(cv => cv.id !== action.payload),
-        currentCV: state.currentCV?.id === action.payload ? null : state.currentCV
       };
-    
-    case 'SET_CURRENT_CV':
-      return { ...state, currentCV: action.payload };
-    
+
     case 'ADD_JOB_OFFER':
       return { ...state, jobOffers: [action.payload, ...state.jobOffers] };
-    
+
     case 'DELETE_JOB_OFFER':
-      return {
-        ...state,
-        jobOffers: state.jobOffers.filter(job => job.id !== action.payload)
-      };
-    
-    case 'SET_TEMPLATES':
-      return { ...state, templates: action.payload };
-    
+      return { ...state, jobOffers: state.jobOffers.filter(job => job.id !== action.payload) };
+
+    case 'ADD_LETTER':
+      return { ...state, letters: [action.payload, ...state.letters] };
+
+    case 'DELETE_LETTER':
+      return { ...state, letters: state.letters.filter(letter => letter.id !== action.payload) };
+
     case 'UPDATE_SETTINGS':
       const newSettings = { ...state.settings, ...action.payload };
       localStorage.setItem('cv-builder-settings', JSON.stringify(newSettings));
-      return { 
-        ...state, 
-        settings: newSettings
-      };
-    
-    case 'REORDER_SECTIONS':
-      if (!state.currentCV) return state;
-      const reorderedCVs = state.cvs.map(cv =>
-        cv.id === action.payload.cvId
-          ? { ...cv, sections: action.payload.sections }
-          : cv
-      );
-      return {
-        ...state,
-        cvs: reorderedCVs,
-        currentCV: { ...state.currentCV, sections: action.payload.sections }
-      };
+      return { ...state, settings: newSettings };
 
-    case 'UPDATE_SUMMARY':
-      if (!state.currentCV || !state.currentProfile) return state;
-       const updatedProfileSummary = { ...state.currentProfile, summary: action.payload };
-       const updatedCVContentSummary = { ...state.currentCV, content: { ...state.currentCV.content, summary: action.payload } };
+    case 'REORDER_SECTIONS': {
       return {
         ...state,
-        currentProfile: updatedProfileSummary,
-        currentCV: updatedCVContentSummary,
-        cvs: state.cvs.map(cv => cv.id === state.currentCV?.id ? updatedCVContentSummary : cv)
+        cvs: state.cvs.map(cv =>
+          cv.id === action.payload.cvId ? { ...cv, sections: action.payload.sections } : cv
+        ),
       };
+    }
 
-    case 'UPDATE_EXPERIENCE':
-      if (!state.currentCV || !state.currentProfile) return state;
-      const updatedExperience = state.currentProfile.experience.map(exp => 
-              exp.id === action.payload.id ? { ...exp, ...action.payload.updates } : exp
-            );
-      const updatedProfileExp = { ...state.currentProfile, experience: updatedExperience };
-      const updatedCVContentExp = { ...state.currentCV, content: { ...state.currentCV.content, experience: updatedExperience } };
+    case 'UPDATE_SUMMARY': {
+      const { profileId, summary } = action.payload;
       return {
         ...state,
-        currentProfile: updatedProfileExp,
-        currentCV: updatedCVContentExp,
-        cvs: state.cvs.map(cv => cv.id === state.currentCV?.id ? updatedCVContentExp : cv)
+        profiles: state.profiles.map(p =>
+          p.id === profileId ? { ...p, summary } : p
+        ),
+        cvs: state.cvs.map(cv =>
+          cv.profileId === profileId ? { ...cv, content: { ...cv.content, summary } } : cv
+        ),
       };
+    }
+      
+    case 'UPDATE_EXPERIENCE': {
+      const { profileId, experienceId, updates } = action.payload;
+      return {
+        ...state,
+        profiles: state.profiles.map(p =>
+          p.id === profileId
+            ? {
+                ...p,
+                experience: p.experience.map(exp =>
+                  exp.id === experienceId ? { ...exp, ...updates } : exp
+                ),
+              }
+            : p
+        ),
+        cvs: state.cvs.map(cv =>
+          cv.profileId === profileId
+            ? {
+                ...cv,
+                content: {
+                  ...cv.content,
+                  experience: cv.content.experience.map(exp =>
+                    exp.id === experienceId ? { ...exp, ...updates } : exp
+                  ),
+                },
+              }
+            : cv
+        ),
+      };
+    }
 
     case 'SET_LOADING':
       return { ...state, isLoading: action.payload };
-    
+
     case 'SET_ERROR':
       return { ...state, error: action.payload };
-    
+
     default:
       return state;
   }
@@ -183,12 +211,14 @@ function cvReducer(state: CVState, action: CVAction): CVState {
 export const CVProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(cvReducer, initialState);
 
-  // Load data from localStorage on initial mount
   useEffect(() => {
     try {
       const savedDataJSON = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (savedDataJSON) {
         const savedData = JSON.parse(savedDataJSON);
+        if (savedData.letters) {
+          savedData.letters = savedData.letters.map((l: CoverLetter) => ({...l, createdAt: new Date(l.createdAt)}));
+        }
         dispatch({ type: 'LOAD_FROM_STORAGE', payload: savedData });
       } else {
         dispatch({ type: 'INITIALIZE_DATA' });
@@ -198,29 +228,24 @@ export const CVProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       dispatch({ type: 'INITIALIZE_DATA' });
     }
 
-    // Load settings separately
     const savedSettings = localStorage.getItem('cv-builder-settings');
     if (savedSettings) {
-      const parsedSettings = JSON.parse(savedSettings);
-      if (parsedSettings.apiConfig && !parsedSettings.apiConfig.provider) {
-        parsedSettings.apiConfig.provider = 'openai';
-      }
-      dispatch({ type: 'UPDATE_SETTINGS', payload: parsedSettings });
+      dispatch({ type: 'UPDATE_SETTINGS', payload: JSON.parse(savedSettings) });
     }
   }, []);
 
-  // Save data to localStorage whenever it changes
   useEffect(() => {
     if (!state.isLoading) {
       const dataToSave = {
-        currentProfile: state.currentProfile,
+        profiles: state.profiles,
+        currentProfileId: state.currentProfileId,
         cvs: state.cvs,
-        currentCV: state.currentCV,
         jobOffers: state.jobOffers,
+        letters: state.letters,
       };
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dataToSave));
     }
-  }, [state.currentProfile, state.cvs, state.currentCV, state.jobOffers, state.isLoading]);
+  }, [state.profiles, state.currentProfileId, state.cvs, state.jobOffers, state.letters, state.isLoading]);
 
   return (
     <CVContext.Provider value={{ state, dispatch }}>
@@ -234,5 +259,9 @@ export const useCVContext = () => {
   if (!context) {
     throw new Error('useCVContext must be used within a CVProvider');
   }
-  return context;
+  const { state, dispatch } = context;
+  const currentProfile = state.profiles.find(p => p.id === state.currentProfileId) || null;
+  const currentCVs = state.cvs.filter(cv => cv.profileId === state.currentProfileId);
+
+  return { state, dispatch, currentProfile, currentCVs };
 };

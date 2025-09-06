@@ -9,7 +9,7 @@ interface APISettingsProps {
 }
 
 const APISettings: React.FC<APISettingsProps> = ({ onComplete, onBack }) => {
-  const [provider, setProvider] = useState<'openai' | 'deepseek'>('openai');
+  const [provider, setProvider] = useState<'openai' | 'deepseek' | 'gemini' | 'openrouter'>('openai');
   const [apiKey, setApiKey] = useState('');
   const [model, setModel] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
@@ -19,6 +19,8 @@ const APISettings: React.FC<APISettingsProps> = ({ onComplete, onBack }) => {
     const savedKey = localStorage.getItem(`jobmotivator_${provider}_key`);
     if (savedKey) {
       setApiKey(savedKey);
+    } else {
+      setApiKey('');
     }
   }, [provider]);
 
@@ -41,13 +43,28 @@ const APISettings: React.FC<APISettingsProps> = ({ onComplete, onBack }) => {
     onComplete(config);
   };
 
-  const getDefaultModel = (provider: 'openai' | 'deepseek') => {
-    return provider === 'openai' ? 'gpt-4' : 'deepseek-chat';
+  const getDefaultModel = (provider: 'openai' | 'deepseek' | 'gemini' | 'openrouter') => {
+    switch (provider) {
+      case 'openai': return 'gpt-4';
+      case 'deepseek': return 'deepseek-chat';
+      case 'gemini': return 'gemini-1.5-flash-latest';
+      case 'openrouter': return 'google/gemma-7b-it:free';
+      default: return '';
+    }
   };
 
   const models = {
     openai: ['gpt-4', 'gpt-4-turbo', 'gpt-3.5-turbo'],
-    deepseek: ['deepseek-chat', 'deepseek-coder']
+    deepseek: ['deepseek-chat', 'deepseek-coder'],
+    gemini: ['gemini-1.5-flash-latest', 'gemini-1.5-pro-latest', 'gemini-pro'],
+    openrouter: [
+        'google/gemma-7b-it:free',
+        'mistralai/mistral-7b-instruct:free',
+        'nousresearch/nous-hermes-2-mixtral-8x7b-dpo:free',
+        'openai/gpt-4o',
+        'google/gemini-pro-1.5',
+        'anthropic/claude-3-haiku'
+    ]
   };
 
   return (
@@ -82,7 +99,7 @@ const APISettings: React.FC<APISettingsProps> = ({ onComplete, onBack }) => {
               }`}
             >
               <div className="font-medium">OpenAI</div>
-              <div className="text-sm text-gray-600">GPT-4, GPT-3.5 Turbo</div>
+              <div className="text-sm text-gray-600">GPT-4, GPT-3.5</div>
             </button>
 
             <button
@@ -95,7 +112,32 @@ const APISettings: React.FC<APISettingsProps> = ({ onComplete, onBack }) => {
               }`}
             >
               <div className="font-medium">DeepSeek</div>
-              <div className="text-sm text-gray-600">DeepSeek Chat, Coder</div>
+              <div className="text-sm text-gray-600">DeepSeek Chat</div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setProvider('gemini')}
+              className={`p-4 border rounded-lg text-left transition-all duration-200 ${
+                provider === 'gemini'
+                  ? 'border-blue-500 bg-blue-50 text-blue-700'
+                  : 'border-gray-300 hover:border-gray-400'
+              }`}
+            >
+              <div className="font-medium">Google Gemini</div>
+              <div className="text-sm text-gray-600">Gemini 1.5 Pro</div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setProvider('openrouter')}
+              className={`p-4 border rounded-lg text-left transition-all duration-200 ${
+                provider === 'openrouter'
+                  ? 'border-blue-500 bg-blue-50 text-blue-700'
+                  : 'border-gray-300 hover:border-gray-400'
+              }`}
+            >
+              <div className="font-medium">OpenRouter</div>
+              <div className="text-sm text-gray-600">Accès à +100 modèles</div>
             </button>
           </div>
         </div>
@@ -110,7 +152,7 @@ const APISettings: React.FC<APISettingsProps> = ({ onComplete, onBack }) => {
               type={showApiKey ? 'text' : 'password'}
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
-              placeholder={`Saisissez votre clé API ${provider === 'openai' ? 'OpenAI' : 'DeepSeek'}`}
+              placeholder={`Saisissez votre clé API ${provider}`}
               className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             />
@@ -152,12 +194,24 @@ const APISettings: React.FC<APISettingsProps> = ({ onComplete, onBack }) => {
                 <p>2. Connectez-vous et allez dans "API Keys"</p>
                 <p>3. Créez une nouvelle clé API</p>
               </>
-            ) : (
+            ) : provider === 'deepseek' ? (
               <>
                 <p>1. Rendez-vous sur <a href="https://platform.deepseek.com" target="_blank" rel="noopener noreferrer" className="underline">platform.deepseek.com</a></p>
                 <p>2. Connectez-vous et allez dans "API Keys"</p>
                 <p>3. Créez une nouvelle clé API</p>
               </>
+            ) : provider === 'gemini' ? (
+                 <>
+                    <p>1. Rendez-vous sur <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="underline">Google AI Studio</a></p>
+                    <p>2. Connectez-vous avec votre compte Google.</p>
+                    <p>3. Cliquez sur "Create API key".</p>
+                </>
+            ) : (
+                 <>
+                    <p>1. Rendez-vous sur <a href="https://openrouter.ai/keys" target="_blank" rel="noopener noreferrer" className="underline">openrouter.ai/keys</a></p>
+                    <p>2. Connectez-vous et cliquez sur "Create Key".</p>
+                    <p>3. Copiez votre clé (elle commence par `sk-or-`).</p>
+                </>
             )}
           </div>
         </div>

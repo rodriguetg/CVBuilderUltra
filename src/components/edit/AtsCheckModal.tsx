@@ -4,6 +4,7 @@ import { X, ShieldCheck, AlertTriangle, Info, CheckCircle, Loader2 } from 'lucid
 import { useCVContext } from '../../context/CVContext';
 import { checkCvForAts } from '../../services/atsCheckerService';
 import { AtsCheckResult, AtsRecommendation } from '../../types';
+import { useParams } from 'react-router-dom';
 
 interface AtsCheckModalProps {
   isOpen: boolean;
@@ -12,20 +13,23 @@ interface AtsCheckModalProps {
 
 const AtsCheckModal: React.FC<AtsCheckModalProps> = ({ isOpen, onClose }) => {
   const { state } = useCVContext();
+  const { cvId } = useParams<{ cvId: string }>();
+  const currentCV = state.cvs.find(cv => cv.id === cvId);
+  
   const [result, setResult] = useState<AtsCheckResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (isOpen && state.currentCV) {
+    if (isOpen && currentCV) {
       setIsLoading(true);
       // Simulate a short delay for better UX
       setTimeout(() => {
-        const checkResult = checkCvForAts(state.currentCV!);
+        const checkResult = checkCvForAts(currentCV);
         setResult(checkResult);
         setIsLoading(false);
       }, 500);
     }
-  }, [isOpen, state.currentCV]);
+  }, [isOpen, currentCV]);
 
   if (!isOpen) return null;
 

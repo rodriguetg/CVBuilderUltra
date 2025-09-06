@@ -3,19 +3,22 @@ import { motion } from 'framer-motion';
 import { useCVContext } from '../../context/CVContext';
 import { CVLayout } from '../../types';
 import { Palette, Type, CheckCircle } from 'lucide-react';
+import { useParams } from 'react-router-dom';
 
 const AppearanceEditor: React.FC = () => {
     const { state, dispatch } = useCVContext();
-    const { currentCV, templates } = state;
+    const { cvId } = useParams<{ cvId: string }>();
+    const currentCV = state.cvs.find(cv => cv.id === cvId);
+    const { templates } = state;
 
     if (!currentCV) return null;
 
     const handleTemplateChange = (templateId: string) => {
-        dispatch({ type: 'UPDATE_CV', payload: { templateId } });
+        dispatch({ type: 'UPDATE_CV', payload: { cvId: currentCV.id, updates: { templateId } } });
     };
 
     const handleLayoutChange = (newLayout: Partial<CVLayout>) => {
-        dispatch({ type: 'UPDATE_CV', payload: { layout: { ...currentCV.layout, ...newLayout } } });
+        dispatch({ type: 'UPDATE_CV', payload: { cvId: currentCV.id, updates: { layout: { ...currentCV.layout, ...newLayout } } } });
     };
 
     const handleColorChange = (colorName: keyof CVLayout['colors'], value: string) => {

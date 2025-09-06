@@ -84,7 +84,7 @@ const ManualForm: React.FC<ManualFormProps> = ({ onBack }) => {
   };
 
   const handleSubmit = () => {
-    const profile: UserProfile = {
+    const newProfile: UserProfile = {
       id: `user-${Date.now()}`,
       name: formData.name,
       email: formData.email,
@@ -147,10 +147,10 @@ const ManualForm: React.FC<ManualFormProps> = ({ onBack }) => {
 
     const newCV: CV = {
       id: `cv-${Date.now()}`,
-      profileId: profile.id,
-      name: `CV de ${profile.name || 'Profil Manuel'}`,
+      profileId: newProfile.id,
+      name: `CV de ${newProfile.name || 'Profil Manuel'}`,
       templateId: state.settings.defaultTemplate || 'modern',
-      content: profile,
+      content: newProfile,
       layout: {
         colors: { primary: '#2563EB', secondary: '#4F46E5', text: '#111827', background: '#FFFFFF' },
         fonts: { heading: 'Georgia, serif', body: 'Arial, sans-serif' }
@@ -163,7 +163,7 @@ const ManualForm: React.FC<ManualFormProps> = ({ onBack }) => {
       views: 0
     };
 
-    dispatch({ type: 'SET_PROFILE', payload: profile });
+    dispatch({ type: 'ADD_PROFILE', payload: newProfile });
     dispatch({ type: 'ADD_CV', payload: newCV });
     navigate('/dashboard?import=manual');
   };

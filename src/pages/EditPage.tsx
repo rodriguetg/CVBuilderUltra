@@ -25,9 +25,9 @@ type SuggestionModalState = {
 const EditPage: React.FC = () => {
   const { cvId } = useParams();
   const navigate = useNavigate();
-  const { state, dispatch } = useCVContext();
-  const { currentCV, cvs } = state;
+  const { state, dispatch, currentProfile, currentCVs } = useCVContext();
   
+  const [currentCV, setCurrentCV] = useState(() => state.cvs.find(cv => cv.id === cvId) || null);
   const [isMatchModalOpen, setMatchModalOpen] = useState(false);
   const [isAtsModalOpen, setAtsModalOpen] = useState(false);
   const [suggestionModalState, setSuggestionModalState] = useState<SuggestionModalState>({
@@ -41,20 +41,27 @@ const EditPage: React.FC = () => {
 
   useEffect(() => {
     if (cvId) {
-      const cvToEdit = cvs.find(cv => cv.id === cvId);
-      if (cvToEdit) {
-        if (currentCV?.id !== cvId) {
-          dispatch({ type: 'SET_CURRENT_CV', payload: cvToEdit });
-        }
-      } else {
+      const cvToEdit = state.cvs.find(cv => cv.id === cvId);
+      setCurrentCV(cvToEdit || null);
+      if (!cvToEdit) {
         navigate('/edit');
       }
-    } else if (cvs.length > 0 && !currentCV) {
-      dispatch({ type: 'SET_CURRENT_CV', payload: cvs[0] });
-    } else if (cvs.length > 0 && !cvId) {
-        navigate(`/edit/${currentCV?.id || cvs[0].id}`);
+    } else if (currentCVs.length > 0) {
+      navigate(`/edit/${currentCVs[0].id}`);
     }
-  }, [cvId, cvs, currentCV, dispatch, navigate]);
+  }, [cvId, state.cvs, currentCVs, navigate]);
+  
+  useEffect(() => {
+    if (currentProfile && currentCV && currentCV.profileId !== currentProfile.id) {
+      const cvForNewProfile = state.cvs.find(cv => cv.profileId === currentProfile.id);
+      if (cvForNewProfile) {
+        navigate(`/edit/${cvForNewProfile.id}`);
+      } else {
+        navigate('/dashboard');
+      }
+    }
+  }, [currentProfile, currentCV, state.cvs, navigate]);
+
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -70,7 +77,7 @@ const EditPage: React.FC = () => {
       const oldIndex = currentCV.sections.findIndex((section) => section.id === active.id);
       const newIndex = currentCV.sections.findIndex((section) => section.id === over!.id);
       const newSections = arrayMove(currentCV.sections, oldIndex, newIndex);
-      dispatch({ type: 'UPDATE_CV', payload: { sections: newSections } });
+      dispatch({ type: 'UPDATE_CV', payload: { cvId: currentCV.id, updates: { sections: newSections } } });
     }
   };
 
@@ -80,10 +87,12 @@ const EditPage: React.FC = () => {
 
   const handleApplySuggestion = (newText: string) => {
     const { sectionType, itemId } = suggestionModalState;
+    if (!currentProfile || !currentCV) return;
+
     if (sectionType === 'summary') {
-      dispatch({ type: 'UPDATE_SUMMARY', payload: newText });
+      dispatch({ type: 'UPDATE_SUMMARY', payload: { profileId: currentProfile.id, summary: newText } });
     } else if (sectionType === 'experience' && itemId) {
-      dispatch({ type: 'UPDATE_EXPERIENCE', payload: { id: itemId, updates: { description: newText } } });
+      dispatch({ type: 'UPDATE_EXPERIENCE', payload: { profileId: currentProfile.id, experienceId: itemId, updates: { description: newText } } });
     }
     setSuggestionModalState({ isOpen: false, sectionType: null, itemId: null, currentText: '' });
   };
@@ -100,20 +109,25 @@ const EditPage: React.FC = () => {
     }
   };
 
-  if (!currentCV) {
-    if (cvs.length > 0) {
+  if (!currentProfile || !currentCV) {
+    if (currentCVs.length > 0) {
         return <div>Chargement du CV...</div>;
     }
     return (
         <div className="text-center py-16">
             <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-800">Aucun CV trouvé</h2>
-            <p className="text-gray-600 mb-6">Pour commencer, veuillez importer ou créer un profil.</p>
+            <h2 className="text-xl font-semibold text-gray-800">Aucun CV trouvé pour ce profil</h2>
+            <p className="text-gray-600 mb-6">Pour commencer, veuillez créer un nouveau CV pour ce profil.</p>
             <Link to="/import" className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700">
-              Importer un profil
+              Créer un nouveau CV
             </Link>
         </div>
     );
+  }
+  
+  const cvWithLatestProfile = {
+      ...currentCV,
+      content: currentProfile
   }
 
   return (
@@ -133,13 +147,13 @@ const EditPage: React.FC = () => {
         <input 
             type="text" 
             value={currentCV.name}
-            onChange={(e) => dispatch({ type: 'UPDATE_CV', payload: { name: e.target.value } })}
+            onChange={(e) => dispatch({ type: 'UPDATE_CV', payload: { cvId: currentCV.id, updates: { name: e.target.value } } })}
             className="text-3xl font-bold text-gray-900 bg-transparent focus:outline-none focus:bg-gray-100 rounded-lg p-1 -m-1"
         />
         <div className="flex items-center space-x-3">
           <button className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-600 bg-white border rounded-lg hover:bg-gray-50">
             <Save className="w-4 h-4" />
-            <span>Sauvegarder</span>
+            <span>Sauvegardé</span>
           </button>
           <button 
             onClick={handleExportPDF}
@@ -188,7 +202,7 @@ const EditPage: React.FC = () => {
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={currentCV.sections.map(s => s.id)} strategy={verticalListSortingStrategy}>
               <div id="cv-preview-area" ref={cvPreviewRef} className="w-full transform scale-[0.9] origin-top">
-                <CVPreview cv={currentCV} onSuggestRewrite={handleOpenSuggestionModal} />
+                <CVPreview cv={cvWithLatestProfile} onSuggestRewrite={handleOpenSuggestionModal} />
               </div>
             </SortableContext>
           </DndContext>
